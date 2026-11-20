@@ -1,0 +1,51 @@
+[package]
+name = "gemini-local-bridge"
+version = "2.0.0"
+description = "Secure local MCP bridge for Google Gemini with Tailscale Funnel and single-folder Google Drive sync"
+edition = "2021"
+
+[lib]
+name = "gemini_local_bridge_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+axum = { version = "0.8", features = ["macros"] }
+tokio = { version = "1", features = ["full"] }
+tower-http = { version = "0.6", features = ["limit", "trace"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream"] }
+url = "2"
+argon2 = "0.5"
+rand = "0.8"
+sha2 = "0.10"
+hmac = "0.12"
+subtle = "2"
+base64 = "0.22"
+hex = "0.4"
+chrono = { version = "0.4", features = ["serde"] }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "webp", "bmp", "ico"] }
+notify = "6"
+walkdir = "2"
+globset = "0.4"
+regex = "1"
+dirs = "5"
+thiserror = "2"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+windows-sys = { version = "0.59", features = [
+  "Win32_Foundation",
+  "Win32_Security_Cryptography",
+  "Win32_System_JobObjects",
+  "Win32_System_Memory",
+  "Win32_System_Threading",
+] }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+strip = true

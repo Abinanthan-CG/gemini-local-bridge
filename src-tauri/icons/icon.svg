@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" fill="none">
+  <defs>
+    <linearGradient id="tileBg" x1="64" y1="24" x2="448" y2="488" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#192230"/>
+      <stop offset="48%" stop-color="#0d1118"/>
+      <stop offset="100%" stop-color="#070a0f"/>
+    </linearGradient>
+    <linearGradient id="tileStroke" x1="256" y1="24" x2="256" y2="488" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#7dd3fc" stop-opacity="0.58"/>
+      <stop offset="32%" stop-color="#38bdf8" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#1e293b" stop-opacity="0.72"/>
+    </linearGradient>
+    <radialGradient id="sparkGlow" cx="256" cy="144" r="142" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.34"/>
+      <stop offset="55%" stop-color="#0284c7" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#0284c7" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="bridgeSpan" x1="112" y1="240" x2="400" y2="372" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#e0f2fe"/>
+      <stop offset="45%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+    <linearGradient id="starFill" x1="256" y1="78" x2="256" y2="196" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="52%" stop-color="#7dd3fc"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Outer obsidian squircle -->
+  <rect x="24" y="24" width="464" height="464" rx="112" fill="url(#tileBg)" stroke="url(#tileStroke)" stroke-width="6"/>
+  <!-- Inner precision hairline -->
+  <rect x="44" y="44" width="424" height="424" rx="94" stroke="#ffffff" stroke-opacity="0.055" stroke-width="2"/>
+
+  <!-- Subtle radial halo -->
+  <circle cx="256" cy="148" r="140" fill="url(#sparkGlow)"/>
+
+  <!-- Clean baseline rail strictly between node centers -->
+  <path d="M144 374 H368" stroke="#334155" stroke-width="9" stroke-linecap="round"/>
+
+  <!-- Secondary inner conduit arc -->
+  <path d="M172 374 V324 C172 288 210 272 256 272 C302 272 340 288 340 324 V374"
+        stroke="#7dd3fc" stroke-opacity="0.28" stroke-width="8" stroke-linecap="round"/>
+
+  <!-- Primary bridge arch -->
+  <path d="M126 374 V316 C126 258 184 234 256 234 C328 234 386 258 386 316 V374"
+        stroke="url(#bridgeSpan)" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Endpoint terminal rings -->
+  <circle cx="126" cy="374" r="19" fill="#0d1118" stroke="#e0f2fe" stroke-width="10"/>
+  <circle cx="386" cy="374" r="19" fill="#0d1118" stroke="#38bdf8" stroke-width="10"/>
+
+  <!-- Precision 4-point Gemini star with crisp separation above arch -->
+  <path d="M256 80 C261 119 275 133 314 138 C275 143 261 157 256 196 C251 157 237 143 198 138 C237 133 251 119 256 80 Z"
+        fill="url(#starFill)"/>
+  <circle cx="256" cy="138" r="6.5" fill="#ffffff"/>
+</svg>

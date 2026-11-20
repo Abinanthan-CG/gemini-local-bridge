@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Gemini Local Bridge</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar" aria-label="Primary navigation">
+      <div class="brand">
+        <img src="logo.svg" alt="" class="brand-logo" width="34" height="34" />
+        <div class="brand-meta">
+          <div class="brand-title">Gemini Bridge</div>
+          <div class="brand-sub">v2.0 · Rust Native</div>
+        </div>
+      </div>
+
+      <nav class="nav" role="tablist" aria-orientation="vertical">
+        <button class="nav-btn active" role="tab" aria-selected="true" data-tab="overview">
+          <span class="nav-left">
+            <svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+            <span>Overview</span>
+          </span>
+        </button>
+
+        <button class="nav-btn" role="tab" aria-selected="false" data-tab="approvals">
+          <span class="nav-left">
+            <svg class="ic" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+            <span>Approvals</span>
+          </span>
+          <span id="badge-pending" class="badge hidden" aria-label="Pending requests">0</span>
+        </button>
+
+        <button class="nav-btn" role="tab" aria-selected="false" data-tab="drive">
+          <span class="nav-left">
+            <svg class="ic" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span>Drive Sync</span>
+          </span>
+          <span id="nav-drive-dot" class="nav-dot" aria-hidden="true"></span>
+        </button>
+
+        <button class="nav-btn" role="tab" aria-selected="false" data-tab="clients">
+          <span class="nav-left">
+            <svg class="ic" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span>Clients &amp; Security</span>
+          </span>
+        </button>
+
+        <button class="nav-btn" role="tab" aria-selected="false" data-tab="audit">
+          <span class="nav-left">
+            <svg class="ic" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            <span>Audit Log</span>
+          </span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="engine-bar">
+          <span id="sidebar-dot" class="dot ok"></span>
+          <div class="engine-info">
+            <div id="sidebar-status" class="engine-label">Engine Active</div>
+            <div id="sidebar-bind" class="engine-sub mono">127.0.0.1:8787</div>
+          </div>
+        </div>
+        <button id="btn-kill" class="btn btn-danger-subtle full">
+          <svg class="ic" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+          <span id="btn-kill-text">Pause Bridge</span>
+        </button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <!-- One-time PIN display banner -->
+      <div id="pin-banner" class="banner hidden" role="status">
+        <div class="banner-left">
+          <svg class="ic ic-accent" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>
+          <div>
+            <div class="banner-title">One-time Access PIN <span class="banner-hint">(stored as Argon2id hash only)</span></div>
+            <div id="pin-value" class="pin-code">------</div>
+          </div>
+        </div>
+        <div class="row">
+          <button id="btn-copy-pin" class="btn btn-sm btn-primary">Copy PIN</button>
+          <button id="btn-dismiss-pin" class="btn btn-sm btn-ghost">Dismiss</button>
+        </div>
+      </div>
+
+      <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+      <!-- OVERVIEW TAB -->
+      <section id="tab-overview" class="tab active" role="tabpanel">
+        <header class="page-head">
+          <div>
+            <h1>Overview</h1>
+            <p class="subtitle">Local-first MCP bridge · All code, files, and execution remain on this PC.</p>
+          </div>
+          <div class="row">
+            <button id="btn-pair" class="btn btn-primary">
+              <svg class="ic" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              <span id="btn-pair-label">Enable Pairing (5m)</span>
+            </button>
+            <button id="btn-open-ws" class="btn btn-ghost">
+              <svg class="ic" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              <span>Workspace</span>
+            </button>
+          </div>
+        </header>
+
+        <!-- 4-metric telemetry strip -->
+        <div class="stat-strip">
+          <div class="stat-tile">
+            <div class="stat-label">Bridge Engine</div>
+            <div class="stat-val" id="stat-engine"><span class="dot ok"></span>Running</div>
+            <div class="stat-sub mono" id="stat-port">127.0.0.1:8787</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Tailscale Funnel</div>
+            <div class="stat-val" id="stat-ts"><span class="dot"></span>Checking</div>
+            <div class="stat-sub mono" id="stat-ts-host">—</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Pairing Gate</div>
+            <div class="stat-val" id="stat-pair"><span class="dot ok"></span>Locked</div>
+            <div class="stat-sub" id="stat-clients">0 paired clients</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Drive Sync</div>
+            <div class="stat-val" id="stat-drive"><span class="dot"></span>Idle</div>
+            <div class="stat-sub" id="stat-drive-files">0 local files</div>
+          </div>
+        </div>
+
+        <div class="grid-2 mt-16">
+          <!-- Endpoints & Tunnel Card -->
+          <div class="card">
+            <div class="card-head">
+              <h2>HTTPS Endpoints</h2>
+              <span id="ts-badge" class="pill">Checking…</span>
+            </div>
+
+            <div class="field-group">
+              <div class="field-label">Gemini MCP URL</div>
+              <div class="copy-bar">
+                <code id="mcp-url" class="copy-text">—</code>
+                <button class="copy-btn" data-copy-from="mcp-url" aria-label="Copy MCP URL">Copy</button>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <div class="field-label">Mobile Approval URL</div>
+              <div class="copy-bar">
+                <code id="approve-url" class="copy-text">—</code>
+                <button class="copy-btn" data-copy-from="approve-url" aria-label="Copy Approval URL">Copy</button>
+              </div>
+            </div>
+
+            <div class="row mt-16">
+              <button id="btn-ts-enable" class="btn btn-sm">Enable Funnel</button>
+              <button id="btn-ts-disable" class="btn btn-sm btn-ghost">Disable Funnel</button>
+            </div>
+            <div id="ts-note" class="note hidden"></div>
+          </div>
+
+          <!-- Sandbox & Allowlist Card -->
+          <div class="card">
+            <div class="card-head">
+              <h2>Sandbox Boundary</h2>
+              <span id="grants-pill" class="pill">0 active grants</span>
+            </div>
+
+            <div class="field-group">
+              <div class="field-label">Workspace Root</div>
+              <div class="copy-bar">
+                <code id="ws-path" class="copy-text">—</code>
+                <button class="copy-btn" data-copy-from="ws-path" aria-label="Copy workspace path">Copy</button>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <div class="field-label">Allowlisted CLI Programs <span class="muted">(no shell · Job Object)</span></div>
+              <div id="prog-chips" class="chip-wrap"></div>
+            </div>
+
+            <div class="row mt-16">
+              <button id="btn-rotate-pin" class="btn btn-sm">Rotate PIN</button>
+              <button class="btn btn-sm btn-ghost" data-jump="approvals">Manage Grants</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Drive summary bar -->
+        <div class="card mt-16">
+          <div class="card-head">
+            <div>
+              <h2>Single-Folder Google Drive Sync</h2>
+              <p class="muted small" id="ov-drive-summary">Scoped strictly to one folder inside your workspace for full-resolution Gemini vision.</p>
+            </div>
+            <span id="ov-drive-badge" class="pill">Not Connected</span>
+          </div>
+          <div class="row mt-12">
+            <button id="btn-ov-sync" class="btn btn-sm btn-primary">
+              <svg class="ic" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              <span>Sync Now</span>
+            </button>
+            <button id="btn-ov-open-sync" class="btn btn-sm btn-ghost">Open drive-sync</button>
+            <button class="btn btn-sm btn-ghost" data-jump="drive">Configure…</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- APPROVALS TAB -->
+      <section id="tab-approvals" class="tab" role="tabpanel">
+        <header class="page-head">
+          <div>
+            <h1>Access Approvals</h1>
+            <p class="subtitle">Grant temporary access to paths outside the workspace or non-allowlisted programs.</p>
+          </div>
+        </header>
+
+        <div class="card">
+          <div class="card-head">
+            <h2>Pending Requests</h2>
+            <span id="pending-count-pill" class="pill">0 pending</span>
+          </div>
+          <div id="pending-list" class="stack"></div>
+        </div>
+
+        <div class="grid-2 mt-16">
+          <div class="card">
+            <h2>Grant Access Manually</h2>
+            <p class="muted small mb-12">Grants apply immediately. Bridge secrets and config folders can never be granted.</p>
+            <form id="grant-form" class="form">
+              <div class="form-row">
+                <label for="grant-kind">Type</label>
+                <select id="grant-kind">
+                  <option value="path">Folder or file path</option>
+                  <option value="program">CLI program</option>
+                </select>
+              </div>
+              <div class="form-row">
+                <label for="grant-target">Target Path or Binary</label>
+                <input id="grant-target" type="text" placeholder="C:\Users\YourName\Downloads  or  magick" required />
+              </div>
+              <div class="form-row">
+                <label for="grant-mode">Duration</label>
+                <select id="grant-mode">
+                  <option value="session">Until app restarts (recommended for browsing a folder)</option>
+                  <option value="once">Once (15 min, single tool call)</option>
+                </select>
+              </div>
+              <button type="submit" class="btn btn-primary mt-4">Grant Access</button>
+            </form>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <h2>Active Grants</h2>
+              <span id="active-grants-pill" class="pill">0 active</span>
+            </div>
+            <div id="grants-list" class="stack"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- DRIVE SYNC TAB -->
+      <section id="tab-drive" class="tab" role="tabpanel">
+        <header class="page-head">
+          <div>
+            <h1>Google Drive Sync</h1>
+            <p class="subtitle">Isolated <code>rclone.conf</code> locked to a single <code>root_folder_id</code> · Watches only <code>drive-sync</code>.</p>
+          </div>
+          <div class="row">
+            <button id="btn-drive-sync-now" class="btn btn-primary">
+              <svg class="ic" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              <span>Sync Now</span>
+            </button>
+            <button id="btn-drive-open" class="btn btn-ghost">Open Local Folder</button>
+          </div>
+        </header>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head">
+              <h2>Connection State</h2>
+              <span id="drive-badge" class="pill">Not Connected</span>
+            </div>
+            <dl class="meta-list">
+              <div><dt>Local Folder</dt><dd class="mono" id="drive-local">—</dd></div>
+              <div><dt>Remote Folder</dt><dd class="mono" id="drive-remote">—</dd></div>
+              <div><dt>Sync Direction</dt><dd id="drive-mode">—</dd></div>
+              <div><dt>Local Files</dt><dd id="drive-files">0</dd></div>
+              <div><dt>Last Sync</dt><dd id="drive-last">Never</dd></div>
+              <div><dt>Last Result</dt><dd id="drive-result">—</dd></div>
+            </dl>
+            <div class="row mt-16">
+              <button id="btn-drive-disconnect" class="btn btn-sm btn-danger-subtle hidden">Disconnect Drive</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>Link Single Drive Folder</h2>
+            <p class="muted small mb-12">Opens Google sign-in in your browser, resolves the folder ID, and locks sync strictly to that folder.</p>
+            <form id="drive-form" class="form">
+              <div class="form-row">
+                <label for="drive-folder-name">Google Drive Folder Name</label>
+                <input id="drive-folder-name" type="text" value="GeminiBridgeSync" placeholder="GeminiBridgeSync" required />
+              </div>
+              <div class="form-row">
+                <label for="drive-folder-id">Existing Folder ID <span class="muted">(optional)</span></label>
+                <input id="drive-folder-id" type="text" placeholder="Leave blank to resolve or create by name" />
+              </div>
+              <div class="form-row">
+                <label for="drive-sync-mode">Direction &amp; OAuth Scope</label>
+                <select id="drive-sync-mode">
+                  <option value="two_way">Two-way sync (PC renders → Gemini AND Drive → PC)</option>
+                  <option value="outbound_only">Outbound-only (strict drive.file scope — PC → Drive only)</option>
+                </select>
+              </div>
+              <button type="submit" id="btn-drive-connect" class="btn btn-primary mt-4">Connect Google Drive</button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- CLIENTS & SECURITY TAB -->
+      <section id="tab-clients" class="tab" role="tabpanel">
+        <header class="page-head">
+          <div>
+            <h1>Clients &amp; Security</h1>
+            <p class="subtitle">OAuth 2.1 + PKCE S256 · DPAPI encrypted tokens · Argon2id PIN · Job Object isolation.</p>
+          </div>
+        </header>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head">
+              <h2>Pairing Gate</h2>
+              <span id="sec-pairing-pill" class="pill">Locked</span>
+            </div>
+            <p class="muted small">Dynamic Client Registration (<code>/register</code>) and OAuth consent (<code>/authorize</code>) stay closed unless Pairing Mode is active. Paired clients refresh tokens normally while closed.</p>
+            <div class="row mt-16">
+              <button id="btn-pair-open-5" class="btn btn-sm btn-primary">Open 5 min</button>
+              <button id="btn-pair-open-15" class="btn btn-sm">Open 15 min</button>
+              <button id="btn-pair-close" class="btn btn-sm btn-ghost">Lock Now</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>Access PIN</h2>
+            <p class="muted small mb-12">Plaintext PIN is never written to disk — only an Argon2id PHC hash. Five wrong attempts trigger a 15-minute global lockout.</p>
+            <form id="pin-form" class="form">
+              <div class="form-row">
+                <label for="custom-pin">Custom PIN <span class="muted">(optional, 6–16 digits)</span></label>
+                <input id="custom-pin" type="password" inputmode="numeric" placeholder="Leave blank for random 6-digit PIN" />
+              </div>
+              <button type="submit" class="btn btn-primary mt-4">Rotate Access PIN</button>
+            </form>
+          </div>
+        </div>
+
+        <div class="card mt-16">
+          <div class="card-head">
+            <h2>Paired OAuth Clients</h2>
+            <span id="clients-count-pill" class="pill">0 clients</span>
+          </div>
+          <div id="clients-list" class="stack"></div>
+        </div>
+      </section>
+
+      <!-- AUDIT TAB -->
+      <section id="tab-audit" class="tab" role="tabpanel">
+        <header class="page-head">
+          <div>
+            <h1>Audit Log</h1>
+            <p class="subtitle">Append-only security &amp; tool telemetry in <code>%LOCALAPPDATA%\GeminiBridge\logs\audit.jsonl</code>.</p>
+          </div>
+          <div class="audit-controls">
+            <input id="audit-search" type="search" class="search-input" placeholder="Filter events or paths…" aria-label="Filter audit events" />
+          </div>
+        </header>
+
+        <div class="filter-bar" role="group" aria-label="Event category filter">
+          <button class="filter-chip active" data-filter="all">All</button>
+          <button class="filter-chip" data-filter="auth">Auth &amp; Pairing</button>
+          <button class="filter-chip" data-filter="files">Files</button>
+          <button class="filter-chip" data-filter="commands">Commands</button>
+          <button class="filter-chip" data-filter="drive">Drive</button>
+          <button class="filter-chip" data-filter="security">Security &amp; Grants</button>
+        </div>
+
+        <div class="card mt-12">
+          <div id="audit-list" class="audit-table"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
